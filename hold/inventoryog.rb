@@ -4,24 +4,20 @@ require './ingredient.rb'
 
 class Inventory
 
-   attr_accessor :dbcaller
-   
-   def initialize()
-      @dbcaller = IngredientDB.new
-   end
-
    def add(ingredient, inStock=true, sourceRecipe=nil)
       ingredient_item = find(ingredient)
       if ingredient_item
-         handle_existing_item(ingredient_item, inStock, ingredient, sourceRecipe)
+         handle_existing_item(ingredient_item, ingredient, sourceRecipe)
          return
       end
       item = {
          "ingredient" => ingredient,
          "inStock" => inStock,
-         "recipes" => sourceRecipe ? Set[sourceRecipe] : Set[""]
       }
-      added = @dbcaller.add(item)
+      if sourceRecipe
+         item["recipes"] = Set[sourceRecipe]
+      end
+      added = IngredientDB.new.add(item)
       puts "#{ingredient} added to table!"
       return added
    end
@@ -33,14 +29,14 @@ class Inventory
          key_condition_expression: key_conds,
          expression_attribute_values: attr_vals,
       }
-      res = @dbcaller.get_ingredient(query_condition)
+      res = IngredientDB.new.get_ingredient(query_condition)
       return res ? res : nil
    end
 
    def update_stock(ingredient, stockValue)
       ingredient_item = find(ingredient)
       if !ingredient_item
-         add(ingredient, stockValue)
+         add(ingredient)
          return
       end
       if ingredient_item["inStock"] == stockValue
@@ -52,7 +48,7 @@ class Inventory
       table_item[:update_expression] = "SET inStock = :i"
       table_item[:expression_attribute_values] = {":i" => stockValue}
       table_item[:return_values] = "UPDATED_NEW"
-      updated = @dbcaller.update(table_item)
+      updated = IngredientDB.new.update(table_item)
       puts "#{ingredient} updated to #{stockValue ? "in stock" : "out of stock"}"
       return updated
    end
@@ -63,7 +59,7 @@ class Inventory
    end
 
    def delete(ingredient)
-      deleted = @dbcaller.delete(ingredient)
+      deleted = IngredientDB.new.delete(ingredient)
       return deleted ? true : false
    end
 
@@ -79,7 +75,7 @@ class Inventory
       table_item[:update_expression] = "SET recipes=:r"
       table_item[:expression_attribute_values] = { ":r" => recipes.length > 0 ? recipes : Set.new([""])}
       table_item[:return_values] = "UPDATED_NEW"
-      return @dbcaller.update(table_item)
+      return IngredientDB.new.udpate(table_item)
    end
 
    private
@@ -90,7 +86,7 @@ class Inventory
       table_item[:update_expression] = "SET recipes=:r"
       table_item[:expression_attribute_values] = { ":r" => Set[source]}
       table_item[:return_values] = "UPDATED_NEW"
-      return @dbcaller.update(table_item)
+      return IngredientDB.new.update(table_item)
    end
 
    def update_recipes(recipes, inStock)
@@ -99,27 +95,22 @@ class Inventory
       end
       cookbook = CookBook.new
       recipes.each do | recipe |
-         if recipe != ""
-            cookbook.update_availability(recipe, inStock)
-         end
+         cookbook.update_availability(recipe, inStock)
       end
    end
 
    def add_recipe(ingredient_item, sourceRecipe)
       recipes = ingredient_item["recipes"].clone
-      if recipes.include? ""
-         recipes.delete("")
-      end
       recipes.add(sourceRecipe)
       table_item = {}
       table_item[:key] = { "ingredient": ingredient_item["ingredient"] }
       table_item[:update_expression] = "SET recipes=:r"
       table_item[:expression_attribute_values] = { ":r" => recipes}
       table_item[:return_values] = "UPDATED_NEW"
-      return @dbcaller.update(table_item)
+      return IngredientDB.new.update(table_item)
    end
 
-   def handle_existing_item(ingredient_item, inStock, ingredient, sourceRecipe)
+   def handle_existing_item(ingredient_item, ingredient, sourceRecipe)
       if sourceRecipe
          if ingredient_item.has_key? "recipes"
             add_recipe(ingredient_item, sourceRecipe)
@@ -127,7 +118,7 @@ class Inventory
             init_recipes(ingredient, sourceRecipe)
          end
       elsif !ingredient_item["inStock"]
-         update_stock(ingredient, inStock)
+         update_stock(ingredient, true)
       else
          puts "This item exists and is in stock"
       end

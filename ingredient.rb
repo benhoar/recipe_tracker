@@ -11,7 +11,6 @@ class IngredientDB
    def add(item)
       table_item = {table_name: @table_name}
       table_item[:item] = item
-      puts table_item
       @client.put_item(table_item)
       return true
    rescue StandardError => e

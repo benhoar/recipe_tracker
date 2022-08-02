@@ -2,94 +2,84 @@ require_relative './inventory.rb'
 require_relative './cookbook.rb'
 require_relative './ingredient.rb'
 
-# inventory = Inventory.new
-# inventory.add("juice")
+def short_print(item)
+   recipe = item["recipe"]
+   ingredients = item["ingredients"].to_s[8..-3]
+   cost = item["cost"]
+   puts "#{recipe} #{cost}: #{ingredients}"
+end
 
-# cookbook = CookBook.new
-# cookbook.add("penis juice")
-# puts cookbook.get_recipe("penis juice")
+def long_print(item)
+   puts "#{item["recipe"]}"
+   item.each_key do | key |
+      if key == "ingredients"
+         puts "#{key}: #{item["ingredients"].to_s[8..-3]}"
+      elsif key != "recipe"
+         puts "#{key}: #{item[key]}"
+      end
+   end
+end
 
-# puts "Restocking penis"
-# inventory.update_stock("penis", true)
-# puts cookbook.get_recipe("penis juice")
+def run_me()
+   inventory = Inventory.new
+   cookbook = CookBook.new
+   while true
+      puts "\nWhat would you like to do?\n"
+      print "(0) Show me what is ready to cook now!\n" \
+           "(1) Add a recipe\n" \
+           "(2) Update a recipe\n" \
+           "(3) Remove a recipe\n" \
+           "(4) Find a recipe\n" \
+           "(5) Restock an ingredient\n" \
+           "(6) Unstock an ingredient\n" \
+           "(7) Check for ingredient\n" \
+           "(8) Delete an ingredient (ONLY USE FOR MISPELLINGS/NOT TO UNSTOCK) \n"
+      print "Enter Choice: " 
+      x = gets.chomp
+      puts
+      case x
+      when "0"
+         puts "Here are your ready to cook meals!"
+         cookbook.ready_to_cook.each do | r |
+            short_print(r)
+         end
+      when "1"
+         print "Enter name of recipe to add: "
+         recipe = gets.chomp.downcase
+         puts cookbook.add(recipe)
+      when "2"
+         print "Enter name of recipe to update: "
+         recipe = gets.chomp.downcase
+         puts cookbook.update_recipe(recipe)
+      when "3"
+         print "Enter name of recipe to remove: "
+         recipe = gets.chomp.downcase
+         puts cookbook.remove(recipe)
+      when "4"
+         print "Enter name of recipe to find: "
+         recipe = gets.chomp.downcase
+         long_print(cookbook.get_recipe(recipe))
+      when "5"
+         print "Enter ingredient to restock: "
+         ingredient = gets.chomp.downcase
+         puts inventory.update_stock(ingredient, true)
+      when "6"
+         print "Enter ingredient un-stock: "
+         ingredient = gets.chomp.downcase
+         puts inventory.update_stock(ingredient, false)
+      when "7"
+         print "What ingredient are we looking for: "
+         ingredient = gets.chomp.downcase
+         puts inventory.in_stock(ingredient) ? "IN STOCK" : "OUT OF STOCK"
+      when "8"
+         print "Enter ingredient to delete: "
+         recipe = gets.chomp.downcase
+         puts inventory.delete(recipe)
+      else
+         puts "Goodbye."
+         break
+      end
+   end
+end
 
-# puts "Removing penis from stock"
-# inventory.update_stock("penis", false)
-# puts cookbook.get_recipe("penis juice")
-
-# inventory = Inventory.new
-# inventory.update_stock("eggs", false)
-# inventory.add("penis juice", false, "penis juice soup")
-# inventory.add("tofu", false, "mapo tofu")
-
-# 1. add/remove inventory without recipe source #FUNCTIONING
-   # inventory = Inventory.new
-   # puts "1 #{inventory.add("clams")}"
-   # puts "2 #{inventory.find("mushroom")}"
-   # puts "3 #{inventory.find("anal beads") ? "found" : "not found"}"
-   # puts "4 #{inventory.delete("clams")}"
-   # puts "5 #{inventory.add("clams")}"
-   # puts "6 #{inventory.add("clams")}"
-   # inventory.update_stock("mushroom", false)
-   # puts "7 #{inventory.find("mushroom")}"
-   # inventory.update_stock("mushroom", true)
-   # puts "8 #{inventory.find("mushroom")}"
-   # inventory.delete("mushroom")
-   # puts "9 #{inventory.find("mushroom") ? "found" : "not found"}"
-   # inventory.add("mushroom")
-   # inventory.update_stock("mushroom", false)
-
-
-# 2. add ingredient with recipe source #FUNCTIONING
-   # inventory = Inventory.new
-   # inventory.add("weiner", false, "hot dogs")
-   # puts inventory.find("weiner")
-   # inventory.add("weiner")
-   # inventory.delete("weiner")
-   # inventory.add("weiner", true, "hot dogs")
-   # puts inventory.find("weiner")
-
-# 3. add recipe without existing ingredients #FUNCTIONING
-   # cookbook = CookBook.new
-   # cookbook.add("burger")
-   # puts cookbook.remove("burger")
-   # puts cookbook.get_recipe("burger")
-   # cookbook.add("burger")
-   # puts cookbook.get_recipe("butts") ? "butts!" : "not found"
-
-# 3a. update ingredient "meat" of burger both directions #FUNCTIONING
-   # inventory = Inventory.new
-   # cookbook = CookBook.new
-   # cookbook.add("burger")
-   # inventory.update_stock("meat", true)
-   # puts cookbook.get_recipe("burger")
-   # inventory.update_stock("meat", true)
-   # puts cookbook.get_recipe("burger")
-   # inventory.update_stock("meat", false)
-   # puts cookbook.get_recipe("burger")
-
-# 4. add recipe with existing ingredients #FUNCTIONING
-   # cookbook = CookBook.new
-   # cookbook.add("burger")
-   # cookbook.add("cheese burger")
-   # puts cookbook.get_recipe("burger")
-   # puts cookbook.get_recipe("cheese burger")
-   # inventory = Inventory.new
-   # inventory.update_stock("cheese", true)
-   # puts cookbook.get_recipe("cheese burger")
-   # inventory.update_stock("cheese", false)
-   # puts cookbook.get_recipe("cheese burger")
-   # inventory.update_stock("meat", true)
-
-# 5. update to in stock an ingredient with associated recipes #FUNCTIONING
-   # inventory = Inventory.new
-   # inventory.update_stock("cheese", true)
-
-# 6. update to out of stock an ingredient with associated recipes #FUNCTIONING
-   # inventory = Inventory.new
-   # inventory.update_stock("mushroom", false)
-
-# 4 Issue Resolution
-   # CASE 1: Adding an ingredient in isolation: FUNCTIONING
-   # CASE 2: Adding an ingredient from a recipe: FUNCTIONING
-   # CASE 3: Updating an ingredients recipe list: NOT FUNCTIONING
+run_me if $PROGRAM_NAME == __FILE__
